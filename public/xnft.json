@@ -1,0 +1,19 @@
+{
+  "name": "Nugget Pay",
+  "version": "0.1.0",
+  "description": "Instant QR code payments on Solana.",
+  "website": "https://nugget.fyi/",
+  "kind": "app",
+  "icon": {
+    "md": "./xnft/logo.png"
+  },
+  "contact": {
+    "repository": "https://github.com/ronanyeah/nugget-frontend"
+  },
+  "screenshots": ["./xnft/screenshot.png"],
+  "entrypoints": {
+    "default": {
+      "web": "./xnft.html"
+    }
+  }
+}
