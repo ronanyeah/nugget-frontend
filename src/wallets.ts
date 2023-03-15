@@ -9,11 +9,8 @@ import {
   WalletAdapter,
   WalletAdapterNetwork,
 } from "@solana/wallet-adapter-base";
-import {
-  GlowWalletAdapter,
-  SolflareWalletAdapter,
-  //LedgerWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
+import { GlowWalletAdapter } from "@solana/wallet-adapter-glow";
+import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import {
   StandardWalletAdapter,
   isWalletAdapterCompatibleWallet,

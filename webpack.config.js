@@ -3,6 +3,7 @@ const webpack = require("webpack");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const InlineChunkHtmlPlugin = require("react-dev-utils/InlineChunkHtmlPlugin");
+//const analyzer = require("webpack-bundle-analyzer");
 
 const publicFolder = resolve("./public");
 
@@ -76,6 +77,7 @@ module.exports = (env) => {
             new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/.(js)$/]),
           ]
         : []),
+      //new analyzer.BundleAnalyzerPlugin(),
     ],
   };
 };
