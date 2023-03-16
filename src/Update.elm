@@ -77,34 +77,25 @@ update msg model =
                         )
                     )
                     (\val ->
-                        model.currentToken
-                            |> unwrap
-                                ( { model
-                                    | fetchingHistory = Nothing
-                                  }
-                                , Cmd.none
-                                )
-                                (\curr ->
-                                    ( { model
-                                        | history =
-                                            model.history
-                                                |> Dict.insert
-                                                    (curr
-                                                        |> Maybe.withDefault "SOL"
-                                                    )
-                                                    val.history
-                                        , balances =
-                                            model.balances
-                                                |> Dict.insert
-                                                    (curr
-                                                        |> Maybe.withDefault "SOL"
-                                                    )
-                                                    val.balance
-                                        , fetchingHistory = Nothing
-                                      }
-                                    , Cmd.none
-                                    )
-                                )
+                        ( { model
+                            | history =
+                                model.history
+                                    |> Dict.insert
+                                        (val.mintAddr
+                                            |> Maybe.withDefault "SOL"
+                                        )
+                                        val.history
+                            , balances =
+                                model.balances
+                                    |> Dict.insert
+                                        (val.mintAddr
+                                            |> Maybe.withDefault "SOL"
+                                        )
+                                        val.balance
+                            , fetchingHistory = Nothing
+                          }
+                        , Cmd.none
+                        )
                     )
 
         PaymentCb val ->

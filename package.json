@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@metaplex-foundation/mpl-token-metadata": "^2.9.1",
-    "@solana-mobile/wallet-adapter-mobile": "^1.0.0",
+    "@solana-mobile/wallet-adapter-mobile": "^2.0.0",
     "@solana/pay": "^0.2.4",
     "@solana/spl-token": "^0.3.7",
     "@solana/spl-token-registry": "^0.2.4574",

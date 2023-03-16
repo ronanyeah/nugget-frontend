@@ -59,7 +59,14 @@ port tokenErr : (String -> msg) -> Sub msg
 port walletsCb : (List WalletMeta -> msg) -> Sub msg
 
 
-port historyCb : ({ history : List Entry, balance : Float } -> msg) -> Sub msg
+port historyCb :
+    ({ mintAddr : Maybe String
+     , history : List Entry
+     , balance : Float
+     }
+     -> msg
+    )
+    -> Sub msg
 
 
 port historyErr : (() -> msg) -> Sub msg

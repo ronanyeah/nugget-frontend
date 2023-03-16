@@ -99,7 +99,7 @@ type Msg
     | Disconnect
     | SetLang Lang
     | GotoHistory (Maybe (Maybe String))
-    | HistoryCb (Result () { history : List Entry, balance : Float })
+    | HistoryCb (Result () { mintAddr : Maybe String, history : List Entry, balance : Float })
     | RefreshHistory
     | SetHistory (Maybe String)
     | ZoneCb Zone

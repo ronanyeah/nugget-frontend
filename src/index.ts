@@ -182,7 +182,11 @@ const getValue = (k: string): string | null => {
             .map((x) => x.signature);
 
           if (memoed.length === 0) {
-            return app.ports.historyCb.send({ history: [], balance });
+            return app.ports.historyCb.send({
+              mintAddr: data.mint,
+              history: [],
+              balance,
+            });
           }
           const txs = await connection.getParsedTransactions(memoed, {
             maxSupportedTransactionVersion: 0,
@@ -243,7 +247,11 @@ const getValue = (k: string): string | null => {
             })
           );
 
-          return app.ports.historyCb.send({ history: res, balance });
+          return app.ports.historyCb.send({
+            mintAddr: data.mint,
+            history: res,
+            balance,
+          });
         },
         (_e: any) => {
           app.ports.historyErr.send(null);
