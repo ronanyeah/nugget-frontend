@@ -1,6 +1,7 @@
 module Types exposing (..)
 
 import Dict exposing (Dict)
+import Http
 import Time exposing (Zone)
 
 
@@ -10,6 +11,7 @@ type alias Model =
     , connectInProgress : Maybe String
     , qrInProgress : Bool
     , mobile : Bool
+    , short : Bool
     , fields : Dict String String
     , qrCode : Maybe String
     , active : Maybe Token
@@ -21,11 +23,13 @@ type alias Model =
     , history : Dict String (List Entry)
     , balances : Dict String Float
     , verifyInProgress : Bool
+    , solDomainInProgress : Maybe String
     , currentToken : Maybe (Maybe String)
     , fetchingHistory : Maybe (Maybe String)
     , zone : Zone
     , tokenAdded : Maybe Token
     , isXnft : Bool
+    , profile : Maybe Wallet
     }
 
 
@@ -45,6 +49,7 @@ type alias Screen =
 
 type alias Wallet =
     { address : String
+    , label : Maybe String
     , meta : WalletMeta
     }
 
@@ -106,6 +111,13 @@ type Msg
     | VerifyToken
     | TokenCb (Result String Token)
     | OpenLink String
+    | VerifySol
+    | VerifyBackpack
+    | VerifySolCb (Result () String)
+    | VerifyBackpackCb String (Result Http.Error (List String))
+    | CancelConnect
+    | ConnectSelect
+    | SetDomainText String
 
 
 type View

@@ -34,6 +34,9 @@ port getHistory : { address : String, mint : Maybe String } -> Cmd msg
 port verifyToken : String -> Cmd msg
 
 
+port solDomain : String -> Cmd msg
+
+
 port buildTx : TxParams -> Cmd msg
 
 
@@ -48,6 +51,9 @@ port connectCb : (Maybe String -> msg) -> Sub msg
 
 
 port paymentCb : (String -> msg) -> Sub msg
+
+
+port solDomainCb : (Maybe String -> msg) -> Sub msg
 
 
 port tokenCb : (Token -> msg) -> Sub msg

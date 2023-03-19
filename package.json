@@ -5,6 +5,7 @@
     "watch": "webpack serve"
   },
   "dependencies": {
+    "@bonfida/spl-name-service": "^0.1.67",
     "@metaplex-foundation/mpl-token-metadata": "^2.9.1",
     "@solana-mobile/wallet-adapter-mobile": "^2.0.0",
     "@solana/pay": "^0.2.4",

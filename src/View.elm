@@ -16,11 +16,12 @@ import Html exposing (Html)
 import Img
 import List.Extra
 import Material.Icons as Icons
-import Material.Icons.Types exposing (Icon)
 import Maybe.Extra exposing (unwrap)
 import Misc exposing (..)
 import Time exposing (Zone)
 import Types exposing (..)
+import View.Connect
+import View.Misc exposing (..)
 
 
 view : Model -> Html Msg
@@ -51,8 +52,8 @@ view model =
             , height fill
             , style "-webkit-tap-highlight-color" "transparent"
             , style "tap-highlight-color" "transparent"
-            , model.qrCode
-                |> whenJust (viewQR model)
+            , Maybe.map2 (viewQR model) model.qrCode model.wallet
+                |> whenJust identity
                 |> inFront
             , Background.image "/bg.jpg"
             , font1
@@ -94,8 +95,8 @@ viewMobile model =
                         { src = wallet.meta.icon
                         , description = ""
                         }
-                    , String.left 10 wallet.address
-                        ++ "..."
+                    , wallet.label
+                        |> Maybe.withDefault (String.left 10 wallet.address ++ "...")
                         |> text
                         |> el [ Font.size 17, moveDown 2 ]
                     ]
@@ -117,7 +118,7 @@ viewMobile model =
                 |> unwrap (text "oops") (viewInput model)
 
         ViewWallets ->
-            viewWallets model
+            View.Connect.view model
 
         ViewSettings ->
             viewSettings model
@@ -182,10 +183,7 @@ viewConnect lang mobile =
 
 
 viewApp model =
-    [ [ [ text "💲"
-            |> el [ Font.size 50 ]
-            |> when False
-        , image [ width <| px 50 ]
+    [ [ [ image [ width <| px 50 ]
             { src = "/nugget.png"
             , description = ""
             }
@@ -215,7 +213,9 @@ viewApp model =
                         { src = wallet.meta.icon
                         , description = ""
                         }
-                    , text <| String.left 10 wallet.address ++ "..."
+                    , wallet.label
+                        |> Maybe.withDefault (String.left 10 wallet.address ++ "...")
+                        |> text
                     ]
                         |> row
                             [ Border.width 1
@@ -234,7 +234,7 @@ viewApp model =
                 |> unwrap (text "oops") (viewInput model)
 
         ViewWallets ->
-            viewWallets model
+            View.Connect.view model
 
         ViewSettings ->
             viewSettings model
@@ -253,10 +253,9 @@ viewApp model =
         |> column
             [ height fill
             , cappedWidth 1400
-            , spacing 80
+            , spacing (switch model.short 40 80)
             , centerX
-            , padding 40
-            , centerX
+            , padding (switch model.mobile 20 40)
             ]
 
 
@@ -474,64 +473,6 @@ viewAmt amt tk =
         |> row [ spacing 8 ]
 
 
-font1 =
-    Font.family [ Font.typeface "Khula" ]
-
-
-font2 =
-    Font.family [ Font.typeface "Tilt Warp" ]
-
-
-para xs =
-    text >> List.singleton >> paragraph xs
-
-
-btnAttr attr msg =
-    btnToggle (Just msg) attr
-
-
-btn msg =
-    btnToggle (Just msg) []
-
-
-btnToggle msg attrs elem =
-    Input.button (attrs ++ [ hover ])
-        { onPress = msg
-        , label = elem
-        }
-
-
-black : Color
-black =
-    rgb255 0 0 0
-
-
-white : Color
-white =
-    rgb255 255 255 255
-
-
-lightGrey =
-    rgb255 100 100 100
-
-
-hover : Attribute msg
-hover =
-    Element.mouseOver [ fade ]
-
-
-fade : Element.Attr a b
-fade =
-    Element.alpha 0.6
-
-
-viewIcon v n =
-    image [ width <| px n ]
-        { src = v
-        , description = ""
-        }
-
-
 formatFloat =
     FormatNumber.format
         { usLocale | decimals = FormatNumber.Locales.Exact 2 }
@@ -544,43 +485,6 @@ formatDeci n dec =
     )
         / 10
         ^ toFloat dec
-
-
-fadeIn : Attribute msg
-fadeIn =
-    style "animation" "fadeIn 1.5s"
-
-
-spinner : Int -> Element msg
-spinner n =
-    spinnerToggle n True
-
-
-spinnerToggle : Int -> Bool -> Element msg
-spinnerToggle n b =
-    Img.notch n "black"
-        |> el [ spin |> whenAttr b ]
-
-
-spinny n b =
-    icon Icons.refresh n
-        |> el
-            [ spin
-                |> whenAttr b
-            ]
-
-
-spin : Attribute msg
-spin =
-    style "animation" "rotation 0.7s infinite linear"
-
-
-medText =
-    text >> List.singleton >> paragraph [ Font.size 30, spacing 15 ]
-
-
-smText =
-    text >> List.singleton >> paragraph [ Font.size 25, spacing 15 ]
 
 
 viewToken tk =
@@ -611,15 +515,21 @@ viewToken tk =
         }
 
 
-viewQR model qr =
+viewQR model qr wallet =
     let
         addr =
-            model.wallet
-                |> whenJust
-                    (\w ->
-                        trimAddr w.address
-                            |> text
+            wallet.label
+                |> unwrap
+                    (trimAddr wallet.address
+                        |> text
+                        |> el [ Font.bold ]
+                    )
+                    (\v ->
+                        [ viewIcon wallet.meta.icon 20
+                        , text v
                             |> el [ Font.bold ]
+                        ]
+                            |> row [ spacing 5 ]
                     )
     in
     [ model.success
@@ -710,90 +620,15 @@ viewQR model qr =
             ]
 
 
-icon : Icon msg -> Int -> Element msg
-icon ic n =
-    ic n Material.Icons.Types.Inherit
-        |> Element.html
-        |> el []
-
-
-viewWallets model =
-    model.walletOptions
-        |> whenJust
-            (\ws ->
-                if List.isEmpty ws then
-                    [ [ medText "No "
-                      , popLink model.isXnft
-                            "https://solana.com/ecosystem/explore?categories=wallet"
-                            (medText "Solana Wallets"
-                                |> el [ Font.bold, Font.underline ]
-                            )
-                      , medText " found!"
-                      ]
-                        |> paragraph []
-                    , text "Back"
-                        |> el [ Font.underline ]
-                        |> btn (SetView ViewHome)
-                        |> el [ alignRight ]
-                    ]
-                        |> column [ centerX, spacing 10 ]
-
-                else
-                    [ translate model.language
-                        "Select Wallet"
-                        "Selecciona una Wallet"
-                        |> boldText
-                    , ws
-                        |> List.map
-                            (\w ->
-                                Input.button
-                                    [ hover
-                                        |> whenAttr (model.connectInProgress == Nothing)
-                                    , fade
-                                        |> whenAttr (model.connectInProgress /= Nothing && model.connectInProgress /= Just w.name)
-                                    , Font.bold
-                                        |> whenAttr (model.connectInProgress == Just w.name)
-                                    , spinner 20
-                                        |> el [ centerY, paddingXY 10 0 ]
-                                        |> onRight
-                                        |> whenAttr (model.connectInProgress == Just w.name)
-                                    ]
-                                    { onPress =
-                                        if model.connectInProgress == Nothing then
-                                            Just <| Connect w.name
-
-                                        else
-                                            Nothing
-                                    , label =
-                                        [ image [ height <| px 20 ] { src = w.icon, description = "" }
-                                        , text w.name
-                                        ]
-                                            |> row [ spacing 10 ]
-                                    }
-                            )
-                        |> column
-                            [ spacing 20
-                            , width fill
-                            , Background.color <| rgb255 228 228 228
-                            , padding 15
-                            , Border.width 1
-                            ]
-                    ]
-                        |> column
-                            [ spacing 10
-                            , centerX
-                            , cappedWidth 500
-                            , fadeIn
-                            ]
-            )
-
-
 viewHistory model =
     let
         fetching =
             model.fetchingHistory /= Nothing
     in
-    [ [ boldText (translate model.language "Received Payments" "Pagos recibidos")
+    [ [ [ boldText (translate model.language "Received Payments" "Pagos recibidos")
+        , para [] (translate model.language "View all payments received through Nugget Pay." "Ver todos los pagos recibidos a través de Nugget Pay.")
+        ]
+            |> column [ spacing 10, width fill ]
       , spinny 35 fetching
             |> (if fetching then
                     identity
@@ -996,14 +831,86 @@ viewHistory model =
     ]
         |> column
             [ centerX
-            , spacing 40
+            , spacing (switch model.short 20 40)
             , cappedWidth 570
             , height fill
             ]
 
 
 viewSettings model =
-    [ [ translate model.language "Language" "Idioma"
+    [ [ [ icon Icons.qr_code_2 25
+        , translate model.language "Create QR code" "Crear Codigo QR"
+            |> text
+        ]
+            |> row
+                [ Background.color white
+                , paddingXY 20 10
+                , Border.width 1
+                , Border.rounded 5
+                , spacing 10
+                ]
+            |> btn (SetView ViewHome)
+      , [ icon Icons.add 25
+        , translate model.language "Add SPL token" "Agregar SPL"
+            |> text
+        ]
+            |> row
+                [ Background.color white
+                , paddingXY 20 10
+                , Border.width 1
+                , Border.rounded 5
+                , spacing 10
+                ]
+            |> btn (SetView ViewNewToken)
+      , [ icon Icons.format_list_bulleted 25
+        , translate model.language "Payment History" "Historial de pagos"
+            |> text
+        ]
+            |> row
+                --[ paddingXY 20 10
+                --, Background.color <| rgb255 0 0 255
+                --, Border.rounded 5
+                --, Font.color white
+                --, Font.bold
+                --, Border.width 1
+                --, Border.color black
+                --]
+                [ Background.color white
+                , paddingXY 20 10
+                , Border.width 1
+                , Border.rounded 5
+                , spacing 10
+                ]
+            |> btn (GotoHistory Nothing)
+      ]
+        |> wrappedRow [ width fill, spacing (switch model.mobile 10 30) ]
+    , [ [ boldText (translate model.language "Connected" "Conectado")
+        , model.wallet
+            |> whenJust
+                (\val ->
+                    [ val.label
+                        |> whenJust
+                            (\v ->
+                                v
+                                    ++ " |"
+                                    |> text
+                                    |> el [ Font.bold ]
+                            )
+                    , trimAddr val.address
+                        |> text
+                        |> el [ Font.underline ]
+                    , icon Icons.launch 23
+                        |> el [ moveUp 4 ]
+                    ]
+                        |> row [ spacing 10 ]
+                        |> popLink model.isXnft
+                            (explorerAcc val.address)
+                )
+
+        --, trimAddr model
+        ]
+            |> column [ spacing 20 ]
+      , translate model.language "Language" "Idioma"
             |> boldText
       , [ Eng, Esp ]
             |> List.map
@@ -1028,18 +935,6 @@ viewSettings model =
             |> row [ spacing 20 ]
       ]
         |> column [ spacing 20 ]
-    , translate model.language "Transfer History" "Historial de Transferencias"
-        |> text
-        |> el
-            [ paddingXY 20 10
-            , Background.color <| rgb255 0 0 255
-            , Border.rounded 5
-            , Font.color white
-            , Font.bold
-            , Border.width 1
-            , Border.color black
-            ]
-        |> btn (GotoHistory Nothing)
     , translate model.language "Disconnect Wallet" "Desconectar Wallet"
         |> text
         |> el
@@ -1057,21 +952,14 @@ viewSettings model =
         |> el [ centerX ]
         |> when model.mobile
     ]
-        |> column [ spacing 40, cappedWidth 450, centerX, fadeIn ]
-
-
-translate lang eng esp =
-    case lang of
-        Eng ->
-            eng
-
-        Esp ->
-            esp
-
-
-boldText =
-    text
-        >> el [ Font.size 24, font2 ]
+        |> column
+            [ spacing 40
+            , cappedWidth 450
+            , centerX
+            , fadeIn
+            , height fill
+            , scrollbarY
+            ]
 
 
 title1 lang =
@@ -1191,12 +1079,6 @@ padNum =
     String.fromInt >> String.padLeft 2 '0'
 
 
-trimAddr w =
-    String.left 5 w
-        ++ "..."
-        ++ String.right 5 w
-
-
 getHistory dct tk =
     tk
         |> unwrap []
@@ -1222,7 +1104,9 @@ splLink xnft val =
 
 paymentHistoryLink lang val =
     "📒  "
-        ++ translate lang "View payment history" "Ver historial de pago"
+        ++ translate lang
+            ("View " ++ val.symbol ++ " payment history")
+            ("Ver historial de pago de " ++ val.symbol)
         |> text
         |> btn (GotoHistory (Just val.address))
         |> el [ centerX, Font.underline, Font.italic ]
@@ -1260,49 +1144,3 @@ viewFlags model =
                     |> btn (SetLang l)
             )
         |> row [ spacing 10 ]
-
-
-switch bool a b =
-    if bool then
-        a
-
-    else
-        b
-
-
-explorer val =
-    --("https://solscan.io/tx/" ++ sig)
-    "https://xray.helius.xyz/" ++ val ++ "/tx"
-
-
-grey =
-    rgb255 227 227 227
-
-
-green =
-    rgb255 0 255 0
-
-
-pair a b =
-    [ boldText a
-    , text b
-    ]
-        |> row [ spacing 10 ]
-
-
-toId =
-    Maybe.withDefault "SOL"
-
-
-popLink xnft url label =
-    if xnft then
-        Input.button [ hover ]
-            { onPress = Just <| OpenLink url
-            , label = label
-            }
-
-    else
-        newTabLink [ hover ]
-            { url = url
-            , label = label
-            }

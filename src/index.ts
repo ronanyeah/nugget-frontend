@@ -5,6 +5,7 @@ import {
   createQR,
   FindReferenceError,
 } from "@solana/pay";
+import { resolve as snsResolve } from "@bonfida/spl-name-service";
 import {
   Metadata,
   PROGRAM_ID as METADATA_ID,
@@ -107,6 +108,19 @@ const getValue = (k: string): string | null => {
   app.ports.disconnect.subscribe(async () => {
     await disconnect();
   });
+
+  app.ports.solDomain.subscribe((name: string) =>
+    wrap(
+      async () => {
+        const res = await snsResolve(connection, name);
+
+        return app.ports.solDomainCb.send(res.toString());
+      },
+      (_e: any) => {
+        app.ports.solDomainCb.send(null);
+      }
+    )
+  );
 
   app.ports.connect.subscribe((name: string) =>
     wrap(

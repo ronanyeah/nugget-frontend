@@ -1,6 +1,9 @@
 module Update exposing (update)
 
 import Dict
+import Http
+import Img
+import Json.Decode as JD
 import List.Extra
 import Maybe.Extra exposing (unwrap)
 import Misc
@@ -66,6 +69,69 @@ update msg model =
                     )
                 )
 
+        VerifyBackpackCb name res ->
+            res
+                |> unpack
+                    (\_ ->
+                        ( { model
+                            | warning = Just "There was a problem."
+                          }
+                        , Cmd.none
+                        )
+                    )
+                    (\val ->
+                        ( { model
+                            | profile = Nothing
+                            , wallet =
+                                val
+                                    |> List.head
+                                    |> Maybe.map
+                                        (\addr ->
+                                            { address = addr
+                                            , label = Just name
+                                            , meta =
+                                                { name = "Backpack Username"
+                                                , icon = Img.backpack
+                                                }
+                                            }
+                                        )
+                            , view = ViewHome
+                          }
+                        , Cmd.none
+                        )
+                    )
+
+        VerifySolCb res ->
+            res
+                |> unpack
+                    (\_ ->
+                        ( { model
+                            | warning = Just "Wallet not found."
+                            , solDomainInProgress = Nothing
+                          }
+                        , Cmd.none
+                        )
+                    )
+                    (\val ->
+                        ( { model
+                            | solDomainInProgress = Nothing
+                            , profile =
+                                model.solDomainInProgress
+                                    |> Maybe.map
+                                        (\domain ->
+                                            { address = val
+                                            , label = Just <| domain ++ ".sol"
+                                            , meta =
+                                                { name = ".sol Domain"
+                                                , icon = "/tokens/solana.png"
+                                                }
+                                            }
+                                        )
+                          }
+                        , Cmd.none
+                        )
+                    )
+
         HistoryCb res ->
             res
                 |> unpack
@@ -97,6 +163,30 @@ update msg model =
                         , Cmd.none
                         )
                     )
+
+        SetDomainText v ->
+            ( { model
+                | profile = Nothing
+                , fields =
+                    model.fields
+                        |> Dict.insert "name" v
+              }
+            , Cmd.none
+            )
+
+        CancelConnect ->
+            ( { model | profile = Nothing }
+            , Cmd.none
+            )
+
+        ConnectSelect ->
+            ( { model
+                | profile = Nothing
+                , wallet = model.profile
+                , view = ViewSettings
+              }
+            , Cmd.none
+            )
 
         PaymentCb val ->
             ( { model | success = Just val }
@@ -139,6 +229,7 @@ update msg model =
                         (\meta addr_ ->
                             { meta = meta
                             , address = addr_
+                            , label = Nothing
                             }
                         )
                         (model.connectInProgress
@@ -356,6 +447,64 @@ update msg model =
                                     }
                                 )
                             )
+                )
+
+        VerifySol ->
+            let
+                val =
+                    model.fields
+                        |> Misc.get "name"
+                        |> String.replace " " ""
+                        |> String.replace ".sol" ""
+            in
+            if String.isEmpty val then
+                ( model, Cmd.none )
+
+            else
+                ( { model
+                    | profile = Nothing
+                    , warning = Nothing
+                    , solDomainInProgress = Just val
+                  }
+                , Ports.solDomain val
+                )
+
+        VerifyBackpack ->
+            let
+                val =
+                    model.fields
+                        |> Misc.get "name"
+            in
+            if String.isEmpty val then
+                ( model, Cmd.none )
+
+            else
+                ( { model
+                    | profile = Nothing
+                    , warning = Nothing
+                  }
+                , Http.get
+                    { url =
+                        "https://xnft-api-server.xnfts.dev/v1/users/fromUsername?username=" ++ val
+                    , expect =
+                        Http.expectJson (VerifyBackpackCb val)
+                            (JD.map2 Tuple.pair
+                                (JD.field "public_key" JD.string)
+                                (JD.field "blockchain" JD.string)
+                                |> JD.list
+                                |> JD.map
+                                    (List.filterMap
+                                        (\( pk, blockchain ) ->
+                                            if blockchain /= "solana" then
+                                                Nothing
+
+                                            else
+                                                Just pk
+                                        )
+                                    )
+                                |> JD.at [ "user", "public_keys" ]
+                            )
+                    }
                 )
 
         SetText k v ->

@@ -4,6 +4,20 @@ import Dict
 import Types exposing (..)
 
 
+switch bool a b =
+    if bool then
+        a
+
+    else
+        b
+
+
+trimAddr w =
+    String.left 5 w
+        ++ "..."
+        ++ String.right 5 w
+
+
 get k xs =
     Dict.get k xs
         |> Maybe.withDefault ""

@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Dict
+import Maybe.Extra exposing (unwrap)
 import Ports
 import Task
 import Time
@@ -24,6 +25,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { view = ViewHome
       , mobile = flags.screen.width < 1000
+      , short = flags.screen.height < 900
       , fields =
             []
                 |> Dict.fromList
@@ -61,6 +63,8 @@ init flags =
       , fetchingHistory = Nothing
       , zone = Time.utc
       , tokenAdded = Nothing
+      , profile = Nothing
+      , solDomainInProgress = Nothing
       }
     , Time.here
         |> Task.perform ZoneCb
@@ -78,4 +82,5 @@ subscriptions _ =
         , Ports.historyErr (Err >> HistoryCb)
         , Ports.tokenCb (Ok >> TokenCb)
         , Ports.tokenErr (Err >> TokenCb)
+        , Ports.solDomainCb (unwrap (Err ()) Ok >> VerifySolCb)
         ]
