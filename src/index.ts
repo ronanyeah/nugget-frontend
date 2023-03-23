@@ -5,7 +5,7 @@ import {
   createQR,
   FindReferenceError,
 } from "@solana/pay";
-import { resolve as snsResolve } from "@bonfida/spl-name-service";
+import { TldSolve } from "@onsol/tldsolve";
 import {
   Metadata,
   PROGRAM_ID as METADATA_ID,
@@ -54,6 +54,7 @@ interface Details {
 const RPC_URL: string = RPC_URL_;
 
 const connection = new Connection(RPC_URL);
+const solver = new TldSolve(connection);
 
 const getValue = (k: string): string | null => {
   return localStorage.getItem(k);
@@ -112,9 +113,9 @@ const getValue = (k: string): string | null => {
   app.ports.solDomain.subscribe((name: string) =>
     wrap(
       async () => {
-        const res = await snsResolve(connection, name);
+        const addr = await solver.getOwnerFromDomain(name);
 
-        return app.ports.solDomainCb.send(res.toString());
+        return app.ports.solDomainCb.send(addr ? addr.toString() : null);
       },
       (_e: any) => {
         app.ports.solDomainCb.send(null);

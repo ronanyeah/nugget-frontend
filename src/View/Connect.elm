@@ -127,13 +127,25 @@ walletSelect model ws =
 
 
 solDomainEntry model =
-    [ Input.text [ width fill ]
+    let
+        inProg =
+            model.solDomainInProgress /= Nothing
+    in
+    [ Input.text
+        [ width fill
+        , onKeydown "Enter" VerifySol
+            |> whenAttr (not inProg)
+        ]
         { label =
-            [ [ icon Icons.language 20
+            [ [ [ icon Icons.language 20
                     |> el [ Font.color <| rgb255 0 0 255 ]
-              , boldText (translate model.language "Use a .sol domain" "Usa tu dominio .sol")
+                , boldText (translate model.language "Use an SNS/ANS domain" "Usa tu dominio .sol")
+                ]
+                    |> row [ spacing 5 ]
+              , text ".sol .abc .bonk .poor"
+                    |> el [ Font.italic ]
               ]
-                |> row [ spacing 5 ]
+                |> column [ spacing 10 ]
             , model.warning
                 --Just "There was a problem!"
                 |> whenJust
@@ -143,6 +155,7 @@ solDomainEntry model =
                             [ Font.color <| rgb255 245 0 0
                             , Font.italic
                             , Font.size 17
+                            , alignBottom
                             , Font.alignRight
                             ]
                     )
@@ -157,7 +170,7 @@ solDomainEntry model =
             |> text
             |> el [ Font.size 35 ]
             |> btnToggle
-                (if model.verifyInProgress then
+                (if inProg then
                     Nothing
 
                  else
@@ -211,11 +224,11 @@ solDomainEntry model =
                     , width fill
                     ]
                 |> btnToggle
-                    (if model.solDomainInProgress == Nothing then
-                        Just VerifySol
+                    (if inProg then
+                        Nothing
 
                      else
-                        Nothing
+                        Just VerifySol
                     )
                     [ width fill ]
              , translate model.language "Learn more about .sol domains" "¿Qué es un dominio .sol?"

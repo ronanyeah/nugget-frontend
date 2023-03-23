@@ -120,7 +120,7 @@ update msg model =
                                     |> Maybe.map
                                         (\domain ->
                                             { address = val
-                                            , label = Just <| domain ++ ".sol"
+                                            , label = Just <| domain
                                             , meta =
                                                 { name = ".sol Domain"
                                                 , icon = "/tokens/solana.png"
@@ -200,7 +200,11 @@ update msg model =
                 , history = Dict.empty
                 , balances = Dict.empty
               }
-            , Ports.disconnect ()
+            , if Maybe.andThen .label model.wallet /= Nothing then
+                Cmd.none
+
+              else
+                Ports.disconnect ()
             )
 
         GetWallets ->
@@ -455,10 +459,22 @@ update msg model =
                     model.fields
                         |> Misc.get "name"
                         |> String.replace " " ""
-                        |> String.replace ".sol" ""
+
+                isErr =
+                    val
+                        |> String.split "."
+                        |> List.length
+                        |> (/=) 2
             in
             if String.isEmpty val then
                 ( model, Cmd.none )
+
+            else if isErr then
+                ( { model
+                    | warning = Just "Invalid input."
+                  }
+                , Cmd.none
+                )
 
             else
                 ( { model
