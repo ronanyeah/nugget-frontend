@@ -567,11 +567,11 @@ viewQR model qr wallet =
                     |> el [ centerX ]
                ]
                 |> column [ spacing 15, centerX ]
-             , sharePill Icons.content_copy (rgb255 165 145 0) "Copy QR" (CopyQR qr)
+             , sharePill Icons.content_copy (rgb255 165 145 0) (translate model.language "Copy QR" "Copia QR") (CopyQR qr)
                 |> (\copyBtn ->
                         if model.shareEnabled then
                             [ copyBtn
-                            , sharePill Icons.share (rgb255 0 163 0) "Share QR" (ShareQR qr)
+                            , sharePill Icons.share (rgb255 0 163 0) (translate model.language "Share QR" "Compartir QR") (ShareQR qr)
                             ]
                                 |> row [ spacing 20, centerX ]
 

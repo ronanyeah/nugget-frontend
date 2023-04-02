@@ -17,11 +17,11 @@ import View.Misc exposing (..)
 view model =
     [ [ translate model.language
             "Connection Options"
-            "TODO"
+            "Opciones de conexión"
             |> headerText
       , translate model.language
             "You will be able to create QR codes and request instant payments."
-            "TODO"
+            "Podrás crear códigos QR y solicitar pagos instantáneos."
             |> para []
       ]
         |> column [ spacing 10 ]
@@ -66,7 +66,7 @@ walletSelect model ws =
             |> el [ Font.color <| rgb255 165 42 42 ]
       , translate model.language
             "Connect a Wallet"
-            "TODO"
+            "Conectar una Wallet"
             |> boldText
       ]
         |> row [ spacing 5 ]
@@ -100,11 +100,15 @@ walletSelect model ws =
             )
         |> (\xs ->
                 if List.isEmpty xs then
-                    [ [ smText "No Solana Wallets have been detected. "
-                      , smText "You can learn more about installing one "
+                    [ [ translate model.language "No Solana Wallets have been detected. " "No se han detectado Wallets de Solana. "
+                            |> smText
+                      , translate model.language
+                            "You can learn more about installing one "
+                            "Puede obtener más información sobre cómo instalar una Wallet "
+                            |> smText
                       , popLink model.isXnft
                             "https://solana.com/ecosystem/explore?categories=wallet"
-                            (translate model.language "here" "TODO"
+                            (translate model.language "here" "aquí"
                                 |> smText
                                 |> el [ Font.bold, Font.underline ]
                             )
