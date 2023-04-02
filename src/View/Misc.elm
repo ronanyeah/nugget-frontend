@@ -29,6 +29,11 @@ green =
     rgb255 0 255 0
 
 
+shdw =
+    Border.shadow
+        { blur = 3, color = black, offset = ( 2, 2 ), size = 2 }
+
+
 pair a b =
     [ boldText a
     , text b
@@ -121,7 +126,11 @@ white =
 
 
 lightGrey =
-    rgb255 100 100 100
+    rgb255 240 240 240
+
+
+green2 =
+    rgb255 54 222 54
 
 
 viewIcon v n =

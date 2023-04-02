@@ -65,6 +65,7 @@ init flags =
       , tokenAdded = Nothing
       , profile = Nothing
       , solDomainInProgress = Nothing
+      , shareEnabled = flags.shareEnabled
       }
     , Time.here
         |> Task.perform ZoneCb

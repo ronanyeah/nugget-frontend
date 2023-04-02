@@ -188,6 +188,16 @@ update msg model =
             , Cmd.none
             )
 
+        CopyQR val ->
+            ( model
+            , Ports.copyQRToClipboard val
+            )
+
+        ShareQR val ->
+            ( model
+            , Ports.shareQR val
+            )
+
         PaymentCb val ->
             ( { model | success = Just val }
             , Cmd.none

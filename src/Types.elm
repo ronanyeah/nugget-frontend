@@ -30,6 +30,7 @@ type alias Model =
     , tokenAdded : Maybe Token
     , isXnft : Bool
     , profile : Maybe Wallet
+    , shareEnabled : Bool
     }
 
 
@@ -38,6 +39,7 @@ type alias Flags =
     , tokens : List Token
     , language : Maybe String
     , xnft : Maybe Wallet
+    , shareEnabled : Bool
     }
 
 
@@ -118,6 +120,8 @@ type Msg
     | CancelConnect
     | ConnectSelect
     | SetDomainText String
+    | CopyQR String
+    | ShareQR String
 
 
 type View

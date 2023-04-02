@@ -13,6 +13,7 @@ import FormatNumber
 import FormatNumber.Locales exposing (usLocale)
 import Helpers.View exposing (..)
 import Html exposing (Html)
+import Html.Attributes
 import Img
 import List.Extra
 import Material.Icons as Icons
@@ -418,8 +419,7 @@ viewTokens model =
                     , width <| px 180
                     , Border.rounded 7
                     , Background.color white
-                    , Border.shadow
-                        { blur = 3, color = black, offset = ( 2, 2 ), size = 2 }
+                    , shdw
                     ]
                     { onPress = Just <| SetActive tk
                     , label =
@@ -531,10 +531,29 @@ viewQR model qr wallet =
                         ]
                             |> row [ spacing 5 ]
                     )
+
+        sharePill icn col txt msg =
+            [ icon icn 17
+                |> el [ Font.color col ]
+            , text txt
+            ]
+                |> row
+                    [ spacing 10
+                    , Font.italic
+                    , Background.color lightGrey
+                    , paddingXY 20 10
+                    , Border.rounded 20
+                    , Border.width 1
+                    , Font.size 17
+                    ]
+                |> btn msg
     in
     [ model.success
         |> unwrap
-            ([ image [ cappedHeight 400, cappedWidth 400 ]
+            ([ image
+                [ cappedHeight 400
+                , cappedWidth 400
+                ]
                 { src = qr
                 , description = ""
                 }
@@ -548,6 +567,18 @@ viewQR model qr wallet =
                     |> el [ centerX ]
                ]
                 |> column [ spacing 15, centerX ]
+             , sharePill Icons.content_copy (rgb255 165 145 0) "Copy QR" (CopyQR qr)
+                |> (\copyBtn ->
+                        if model.shareEnabled then
+                            [ copyBtn
+                            , sharePill Icons.share (rgb255 0 163 0) "Share QR" (ShareQR qr)
+                            ]
+                                |> row [ spacing 20, centerX ]
+
+                        else
+                            copyBtn
+                                |> el [ centerX ]
+                   )
              ]
                 |> column [ spacing 20 ]
             )
@@ -555,7 +586,7 @@ viewQR model qr wallet =
                 [ icon Icons.task_alt 175
                     |> el
                         [ fadeIn
-                        , Font.color <| rgb255 54 222 54
+                        , Font.color green2
                         ]
                 , translate model.language "Success!" "Éxito!"
                     |> text
@@ -591,7 +622,6 @@ viewQR model qr wallet =
             [ padding 30
             , Background.color white
             , Border.rounded 30
-            , height <| px 550
             , width fill
                 |> whenAttr model.mobile
             , Border.width 2
@@ -954,12 +984,14 @@ viewSettings model =
     ]
         |> column
             [ spacing 40
-            , cappedWidth 450
-            , centerX
-            , fadeIn
+            , width fill
             , height fill
-            , scrollbarY
             ]
+        |> (\elem ->
+                Element.Keyed.el
+                    [ centerX, cappedWidth 450, fadeIn, height fill, scrollbarY ]
+                    ( "settings", elem )
+           )
 
 
 title1 lang =
@@ -993,8 +1025,7 @@ newTokenButton lang yPad wd fnt =
         , width <| px wd
         , Border.rounded 7
         , Background.color white
-        , Border.shadow
-            { blur = 3, color = black, offset = ( 2, 2 ), size = 2 }
+        , shdw
         ]
         { onPress = Just (SetView ViewNewToken)
         , label =
@@ -1017,8 +1048,7 @@ viewPill msg tk =
         , width <| px 140
         , Border.rounded 7
         , Background.color white
-        , Border.shadow
-            { blur = 3, color = black, offset = ( 2, 2 ), size = 2 }
+        , shdw
         ]
         { onPress = Just <| msg tk
         , label =

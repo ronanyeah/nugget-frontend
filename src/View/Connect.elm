@@ -5,6 +5,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Element.Keyed
 import Helpers.View exposing (..)
 import Material.Icons as Icons
 import Maybe.Extra exposing (unwrap)
@@ -50,11 +51,14 @@ view model =
     ]
         |> column
             [ spacing 30
-            , centerX
-            , cappedWidth 500
-            , fadeIn
+            , width fill
             , height fill
             ]
+        |> (\elem ->
+                Element.Keyed.el
+                    [ centerX, cappedWidth 500, fadeIn, height fill ]
+                    ( "connect", elem )
+           )
 
 
 walletSelect model ws =

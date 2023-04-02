@@ -70,7 +70,7 @@ const getValue = (k: string): string | null => {
           name: wallet.name,
           icon: wallet.icon,
         },
-        address: wallet.publicKey.toString(),
+        address: wallet.publicKey ? wallet.publicKey.toString() : "NULL",
       };
     } else {
       return null;
@@ -87,6 +87,7 @@ const getValue = (k: string): string | null => {
       tokens: [],
       language: getValue("language"),
       xnft,
+      shareEnabled: Boolean(window.navigator.canShare),
     },
   });
 
@@ -113,12 +114,57 @@ const getValue = (k: string): string | null => {
   app.ports.solDomain.subscribe((name: string) =>
     wrap(
       async () => {
-        const addr = await solver.getOwnerFromDomain(name);
+        const owner = await solver.getOwnerFromDomain(name);
 
-        return app.ports.solDomainCb.send(addr ? addr.toString() : null);
+        if (!owner) {
+          return app.ports.solDomainCb.send(null);
+        }
+
+        return app.ports.solDomainCb.send(owner.toString());
       },
       (_e: any) => {
         app.ports.solDomainCb.send(null);
+      }
+    )
+  );
+
+  app.ports.shareQR.subscribe((qr: string) =>
+    wrap(
+      async () => {
+        const res = await fetch(qr);
+        const blob = await res.blob();
+
+        const file = new File([blob], "nugget_pay_qr.png", {
+          type: "image/png",
+        });
+
+        await navigator.share({
+          title: "Nugget Pay QR Code",
+          //text: "Transfer Request",
+          files: [file],
+        });
+
+        //app.ports.connectCb.send(null);
+      },
+      (_e: any) => {
+        //app.ports.connectCb.send(null);
+      }
+    )
+  );
+
+  app.ports.copyQRToClipboard.subscribe((qr: string) =>
+    wrap(
+      async () => {
+        const res = await fetch(qr);
+        const blob = await res.blob();
+
+        const item = new ClipboardItem({ [blob.type]: blob });
+        await navigator.clipboard.write([item]);
+
+        //app.ports.connectCb.send(null);
+      },
+      (_e: any) => {
+        //app.ports.connectCb.send(null);
       }
     )
   );
@@ -176,7 +222,11 @@ const getValue = (k: string): string | null => {
         async () => {
           const owner = new PublicKey(data.address);
           const mint = data.mint
-            ? getAssociatedTokenAddressSync(new PublicKey(data.mint), owner)
+            ? getAssociatedTokenAddressSync(
+                new PublicKey(data.mint),
+                owner,
+                true
+              )
             : null;
           const xs = await connection.getSignaturesForAddress(
             mint ? mint : owner,

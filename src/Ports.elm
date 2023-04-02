@@ -22,6 +22,12 @@ port connect : String -> Cmd msg
 port openLink : String -> Cmd msg
 
 
+port copyQRToClipboard : String -> Cmd msg
+
+
+port shareQR : String -> Cmd msg
+
+
 port clearWatch : () -> Cmd msg
 
 
