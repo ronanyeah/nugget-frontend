@@ -1,6 +1,7 @@
 module Update exposing (update)
 
 import Dict
+import Helpers.Http exposing (jsonResolver)
 import Http
 import Img
 import Json.Decode as JD
@@ -9,6 +10,7 @@ import Maybe.Extra exposing (unwrap)
 import Misc
 import Ports
 import Result.Extra exposing (unpack)
+import Task
 import Types exposing (..)
 
 
@@ -69,33 +71,23 @@ update msg model =
                     )
                 )
 
-        VerifyBackpackCb name res ->
+        VerifyBackpackCb res ->
             res
                 |> unpack
-                    (\_ ->
+                    (\err ->
                         ( { model
-                            | warning = Just "There was a problem."
+                            | backpackInProgress = False
+                            , bpkWarning = Just "Profile not found."
                           }
-                        , Cmd.none
+                        , logHttpError "VerifyBackpackCb" err
                         )
                     )
                     (\val ->
                         ( { model
                             | profile = Nothing
-                            , wallet =
-                                val
-                                    |> List.head
-                                    |> Maybe.map
-                                        (\addr ->
-                                            { address = addr
-                                            , label = Just name
-                                            , meta =
-                                                { name = "Backpack Username"
-                                                , icon = Img.backpack
-                                                }
-                                            }
-                                        )
-                            , view = ViewHome
+                            , backpackInProgress = False
+                            , wallet = Just val
+                            , view = ViewSettings
                           }
                         , Cmd.none
                         )
@@ -167,9 +159,20 @@ update msg model =
         SetDomainText v ->
             ( { model
                 | profile = Nothing
+                , warning = Nothing
                 , fields =
                     model.fields
                         |> Dict.insert "name" v
+              }
+            , Cmd.none
+            )
+
+        SetBackpackText v ->
+            ( { model
+                | fields =
+                    model.fields
+                        |> Dict.insert "bpk" v
+                , bpkWarning = Nothing
               }
             , Cmd.none
             )
@@ -209,6 +212,7 @@ update msg model =
                 , view = ViewHome
                 , history = Dict.empty
                 , balances = Dict.empty
+                , fields = Dict.empty
               }
             , if Maybe.andThen .label model.wallet /= Nothing then
                 Cmd.none
@@ -499,7 +503,7 @@ update msg model =
             let
                 val =
                     model.fields
-                        |> Misc.get "name"
+                        |> Misc.get "bpk"
             in
             if String.isEmpty val then
                 ( model, Cmd.none )
@@ -507,30 +511,68 @@ update msg model =
             else
                 ( { model
                     | profile = Nothing
-                    , warning = Nothing
+                    , bpkWarning = Nothing
+                    , backpackInProgress = True
                   }
-                , Http.get
-                    { url =
-                        "https://xnft-api-server.xnfts.dev/v1/users/fromUsername?username=" ++ val
-                    , expect =
-                        Http.expectJson (VerifyBackpackCb val)
-                            (JD.map2 Tuple.pair
-                                (JD.field "public_key" JD.string)
-                                (JD.field "blockchain" JD.string)
-                                |> JD.list
-                                |> JD.map
-                                    (List.filterMap
-                                        (\( pk, blockchain ) ->
-                                            if blockchain /= "solana" then
-                                                Nothing
-
-                                            else
-                                                Just pk
-                                        )
-                                    )
-                                |> JD.at [ "user", "public_keys" ]
-                            )
+                , Http.task
+                    { method = "GET"
+                    , headers = []
+                    , url = "https://xnft-api-server.xnfts.dev/v1/users/fromUsername?username=" ++ val
+                    , body = Http.emptyBody
+                    , resolver =
+                        JD.at [ "user", "id" ] JD.string
+                            |> jsonResolver
+                    , timeout = Nothing
                     }
+                    |> Task.andThen
+                        (\id ->
+                            Http.task
+                                { method = "GET"
+                                , headers = []
+                                , url = "https://xnft-api-server.xnfts.dev/v1/users?user_id=" ++ id
+                                , body = Http.emptyBody
+                                , resolver =
+                                    JD.map2 Tuple.pair
+                                        (JD.field "publicKey" JD.string)
+                                        (JD.field "blockchain" JD.string)
+                                        |> JD.list
+                                        |> JD.field "publicKeys"
+                                        |> JD.map
+                                            (List.filterMap
+                                                (\( pk, blockchain ) ->
+                                                    if blockchain /= "solana" then
+                                                        Nothing
+
+                                                    else
+                                                        Just pk
+                                                )
+                                            )
+                                        |> JD.andThen
+                                            (List.head
+                                                >> unwrap
+                                                    (JD.fail "Profile not found")
+                                                    JD.succeed
+                                            )
+                                        |> JD.andThen
+                                            (\addr ->
+                                                JD.field "image" JD.string
+                                                    |> JD.map
+                                                        (\img ->
+                                                            { address = addr
+                                                            , label = Just val
+                                                            , meta =
+                                                                { name = "Backpack Username"
+                                                                , icon = img
+                                                                }
+                                                            }
+                                                        )
+                                            )
+                                        |> JD.field "user"
+                                        |> jsonResolver
+                                , timeout = Nothing
+                                }
+                        )
+                    |> Task.attempt VerifyBackpackCb
                 )
 
         SetText k v ->
@@ -554,3 +596,13 @@ update msg model =
               else
                 Cmd.none
             )
+
+
+logHttpError : String -> Http.Error -> Cmd msg
+logHttpError tag =
+    Helpers.Http.parseError >> logWithTag tag
+
+
+logWithTag : String -> String -> Cmd msg
+logWithTag tag err =
+    Ports.log (tag ++ ":\n" ++ err)

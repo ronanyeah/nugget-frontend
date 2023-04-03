@@ -7,6 +7,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Keyed
 import Helpers.View exposing (..)
+import Img
 import Material.Icons as Icons
 import Maybe.Extra exposing (unwrap)
 import Misc exposing (..)
@@ -25,29 +26,19 @@ view model =
             |> para []
       ]
         |> column [ spacing 10 ]
-
-    --|> when (not <| List.isEmpty ws)
-    , model.walletOptions
-        |> unwrap (solDomainEntry model)
-            (\ws ->
-                [ solDomainEntry model
-                    |> backing
-
-                --, smText (translate model.language "Or" "O")
-                --|> el [ centerX ]
-                --|> when (not <| List.isEmpty ws)
-                , walletSelect model ws
-                    |> backing
-
-                --|> when (not <| List.isEmpty ws)
-                ]
-                    |> column
-                        [ spacing 30
-                        , width fill
-                        , height fill
-                        , scrollbarY
-                        ]
-            )
+    , [ solDomainEntry model
+            |> backing
+      , backpackEntry model
+            |> backing
+      , model.walletOptions
+            |> whenJust (walletSelect model >> backing)
+      ]
+        |> column
+            [ spacing 30
+            , width fill
+            , height fill
+            , scrollbarY
+            ]
     ]
         |> column
             [ spacing 30
@@ -62,7 +53,7 @@ view model =
 
 
 walletSelect model ws =
-    [ [ icon Icons.wallet 20
+    [ [ icon Icons.wallet 25
             |> el [ Font.color <| rgb255 165 42 42 ]
       , translate model.language
             "Connect a Wallet"
@@ -134,6 +125,90 @@ walletSelect model ws =
         |> column [ spacing 10, width fill ]
 
 
+backpackEntry model =
+    [ Input.text
+        [ width fill
+        , onKeydown "Enter" VerifyBackpack
+            |> whenAttr (not model.backpackInProgress)
+        , model.bpkWarning
+            |> whenJust
+                (text
+                    >> List.singleton
+                    >> paragraph
+                        [ Font.color <| rgb255 245 0 0
+                        , Font.italic
+                        , Font.size 17
+                        , alignTop
+                        , Font.alignRight
+                        , paddingXY 7 7
+                        , fadeIn
+                        ]
+                )
+            |> inFront
+        ]
+        { label =
+            [ [ icon Icons.backpack 25
+                    |> el [ Font.color <| rgb255 255 0 0 ]
+              , boldText (translate model.language "Use a Backpack username" "Usa tu usario de Backpack")
+              ]
+                |> row [ spacing 5 ]
+            ]
+                |> row [ width fill, spaceEvenly ]
+                |> Input.labelAbove [ width fill ]
+        , onChange = SetBackpackText
+        , placeholder = Just <| Input.placeholder [] <| text "..."
+        , text = get "bpk" model.fields
+        }
+    , [ [ image [ height <| px (switch model.mobile 18 22) ]
+            { src = Img.backpack
+            , description = ""
+            }
+        , translate model.language "Search" "Buscar"
+            |> text
+            |> el [ Font.size 17, moveDown 2 ]
+        ]
+            |> row
+                [ centerX
+                , spacing (switch model.mobile 10 15)
+                , spinner 20
+                    |> el [ centerY, paddingXY 10 0 ]
+                    |> onRight
+                    |> whenAttr model.backpackInProgress
+                ]
+            |> el
+                [ Border.width 1
+                , Border.rounded 7
+                , Background.color white
+                , switch model.mobile (paddingXY 15 10) (paddingXY 20 13)
+                , width fill
+                ]
+            |> btnToggle
+                (if model.backpackInProgress then
+                    Nothing
+
+                 else
+                    Just VerifyBackpack
+                )
+                [ width fill ]
+      , translate model.language "Learn more about Backpack" "Aprender más sobre Backpack"
+            |> text
+            |> el [ Font.underline, Font.italic, Font.size 17 ]
+            |> popLink model.isXnft "https://twitter.com/xNFT_Backpack"
+            |> el
+                [ alignRight
+                , paddingEach
+                    { top = 10
+                    , bottom = 0
+                    , left = 0
+                    , right = 0
+                    }
+                ]
+      ]
+        |> column [ width fill, spacing 5 ]
+    ]
+        |> column [ width fill, spacing 10 ]
+
+
 solDomainEntry model =
     let
         inProg =
@@ -145,7 +220,7 @@ solDomainEntry model =
             |> whenAttr (not inProg)
         ]
         { label =
-            [ [ [ icon Icons.language 20
+            [ [ [ icon Icons.language 25
                     |> el [ Font.color <| rgb255 0 0 255 ]
                 , boldText (translate model.language "Use an SNS/ANS domain" "Usa tu dominio .sol")
                 ]
@@ -174,38 +249,6 @@ solDomainEntry model =
         , placeholder = Just <| Input.placeholder [] <| text "moonbags.sol"
         , text = get "name" model.fields
         }
-    , [ [ ".sol"
-            |> text
-            |> el [ Font.size 35 ]
-            |> btnToggle
-                (if inProg then
-                    Nothing
-
-                 else
-                    Just VerifySol
-                )
-                [ centerX ]
-            |> when False
-        , "Backpack"
-            |> text
-            |> el [ Font.size 35 ]
-            |> btnToggle
-                (if model.verifyInProgress then
-                    Nothing
-
-                 else
-                    Just VerifyBackpack
-                )
-                []
-            |> when False
-        ]
-            |> row
-                [ --alignRight
-                  centerX
-                , spacing 20
-                ]
-      ]
-        |> row [ width fill ]
     , model.profile
         |> unwrap
             ([ [ image [ height <| px (switch model.mobile 18 22) ]

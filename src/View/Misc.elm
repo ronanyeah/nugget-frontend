@@ -193,3 +193,10 @@ smText =
 
 backing =
     el [ padding 10, Background.color white, width fill, Border.width 1 ]
+
+
+withIcon icn elem =
+    [ icon icn 25
+    , elem
+    ]
+        |> row [ spacing 10 ]

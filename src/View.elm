@@ -62,13 +62,13 @@ view model =
 
 
 viewMobile model =
-    [ [ [ [ image [ width <| px 35 ]
+    [ [ [ [ image [ width <| px 38 ]
                 { src = "/nugget.png"
                 , description = ""
                 }
           , text "nugget"
                 |> el
-                    [ Font.size 32
+                    [ Font.size 34
                     , font2
                     ]
           ]
@@ -178,7 +178,7 @@ viewConnect lang mobile =
             , spacing (switch mobile 10 15)
             , Border.rounded 7
             , Background.color white
-            , switch mobile (paddingXY 15 10) (paddingXY 20 13)
+            , switch mobile (paddingXY 15 8) (paddingXY 20 13)
             ]
         |> btn GetWallets
 
@@ -262,7 +262,11 @@ viewApp model =
 
 viewNewToken model =
     [ boldText (translate model.language "Add New SPL token" "Añadir Nuevo SPL token")
-    , [ Input.text [ width fill ]
+    , [ Input.text
+            [ width fill
+            , onKeydown "Enter" VerifyToken
+                |> whenAttr (not model.verifyInProgress)
+            ]
             { label = Input.labelHidden ""
             , onChange = SetText "token"
             , placeholder = Just <| Input.placeholder [] <| text "SPL token mint address"
@@ -348,7 +352,12 @@ viewInput model val =
         , translate model.language " do you want to receive?" " quieres recibir?"
             |> text
         ]
-    , [ Input.text [ width <| px 150, Font.alignRight ]
+    , [ Input.text
+            [ width <| px 150
+            , Font.alignRight
+            , onKeydown "Enter" SubmitAmount
+                |> whenAttr (not model.qrInProgress)
+            ]
             { label = Input.labelHidden ""
             , onChange = SetText "nums"
             , placeholder = Just <| Input.placeholder [] <| text "0.00"
@@ -914,17 +923,23 @@ viewSettings model =
             |> btn (GotoHistory Nothing)
       ]
         |> wrappedRow [ width fill, spacing (switch model.mobile 10 30) ]
-    , [ [ boldText (translate model.language "Connected" "Conectado")
+    , [ [ translate model.language "Connected" "Conectado"
+            |> boldText
+            |> withIcon Icons.electrical_services
         , model.wallet
             |> whenJust
                 (\val ->
                     [ val.label
                         |> whenJust
                             (\v ->
-                                v
-                                    ++ " |"
-                                    |> text
-                                    |> el [ Font.bold ]
+                                [ image [ height <| px 20 ]
+                                    { src = val.meta.icon
+                                    , description = ""
+                                    }
+                                , text v
+                                , text "|"
+                                ]
+                                    |> row [ Font.bold, spacing 10 ]
                             )
                     , trimAddr val.address
                         |> text
@@ -939,10 +954,11 @@ viewSettings model =
 
         --, trimAddr model
         ]
-            |> column [ spacing 20 ]
-      , translate model.language "Language" "Idioma"
+            |> column [ spacing 15 ]
+      , [ translate model.language "Language" "Idioma"
             |> boldText
-      , [ Eng, Esp ]
+            |> withIcon Icons.language
+        , [ Eng, Esp ]
             |> List.map
                 (\l ->
                     (case l of
@@ -963,8 +979,10 @@ viewSettings model =
                         |> btn (SetLang l)
                 )
             |> row [ spacing 20 ]
+        ]
+            |> column [ spacing 15 ]
       ]
-        |> column [ spacing 20 ]
+        |> column [ spacing 30 ]
     , translate model.language "Disconnect Wallet" "Desconectar Wallet"
         |> text
         |> el
@@ -986,10 +1004,11 @@ viewSettings model =
             [ spacing 40
             , width fill
             , height fill
+            , fadeIn
             ]
         |> (\elem ->
                 Element.Keyed.el
-                    [ centerX, cappedWidth 450, fadeIn, height fill, scrollbarY ]
+                    [ centerX, cappedWidth 450, height fill, scrollbarY ]
                     ( "settings", elem )
            )
 

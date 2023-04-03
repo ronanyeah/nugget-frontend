@@ -20,9 +20,11 @@ type alias Model =
     , tokens : List Token
     , language : Lang
     , warning : Maybe String
+    , bpkWarning : Maybe String
     , history : Dict String (List Entry)
     , balances : Dict String Float
     , verifyInProgress : Bool
+    , backpackInProgress : Bool
     , solDomainInProgress : Maybe String
     , currentToken : Maybe (Maybe String)
     , fetchingHistory : Maybe (Maybe String)
@@ -116,10 +118,11 @@ type Msg
     | VerifySol
     | VerifyBackpack
     | VerifySolCb (Result () String)
-    | VerifyBackpackCb String (Result Http.Error (List String))
+    | VerifyBackpackCb (Result Http.Error Wallet)
     | CancelConnect
     | ConnectSelect
     | SetDomainText String
+    | SetBackpackText String
     | CopyQR String
     | ShareQR String
 

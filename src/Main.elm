@@ -37,6 +37,7 @@ init flags =
       , success = Nothing
       , qrCode = Nothing
       , warning = Nothing
+      , bpkWarning = Nothing
       , isXnft = flags.xnft /= Nothing
       , walletOptions =
             flags.xnft
@@ -65,6 +66,7 @@ init flags =
       , tokenAdded = Nothing
       , profile = Nothing
       , solDomainInProgress = Nothing
+      , backpackInProgress = False
       , shareEnabled = flags.shareEnabled
       }
     , Time.here
