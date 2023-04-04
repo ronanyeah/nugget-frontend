@@ -14,11 +14,11 @@ import Types exposing (..)
 
 explorer val =
     --("https://solscan.io/tx/" ++ sig)
-    "https://xray.helius.xyz/" ++ val ++ "/tx"
+    "https://xray.helius.xyz/tx/" ++ val
 
 
 explorerAcc val =
-    "https://xray.helius.xyz/" ++ val ++ "/wallet"
+    "https://xray.helius.xyz/account/" ++ val
 
 
 grey =
